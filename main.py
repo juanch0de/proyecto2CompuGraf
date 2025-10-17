@@ -1,73 +1,89 @@
-import tkinter as tk
-from tkinter import filedialog, simpledialog, messagebox
-from PIL import Image, ImageTk, ImageOps
-import numpy as np
+import tkinter as tk #Libreria para la interfaz grafica 
+from tkinter import filedialog, simpledialog, messagebox 
+from PIL import Image, ImageTk, ImageOps #Libreria para manejar las imagenes
+import numpy as np #Libreria para operar con los pixeles de las imagenes 
 import matplotlib.pyplot as plt
 
-imagen_original = None  
-imagen_resultado = None  
-imagen_secundaria = None  
+#Variables Globales 
+imagen_original = None  # Guarda la imagen subida por el usuario 
+imagen_resultado = None  # Guarda la imagen que resulta despues de aplicar una transformación
+imagen_secundaria = None  # Permite el manejo de una segunda imagen usada en la fusión 
 
 #Funciones 
 
+#Brillo global 
 def brillo(img, valor):
     img_cop = np.copy(img)
     img_cop = img_cop + valor * 255
     img_cop = np.clip(img_cop, 0, 255)
     return img_cop
-
+    
+#Brillo por canal
 def brillo_por_canal(img, r, g, b):
     img[:, :, 0] = np.clip(img[:, :, 0] + r * 255, 0, 255)
     img[:, :, 1] = np.clip(img[:, :, 1] + g * 255, 0, 255)
     img[:, :, 2] = np.clip(img[:, :, 2] + b * 255, 0, 255)
     return img
 
+#Contraste logaritmico 
 def contraste_logaritmico(img):
     c = 255 / np.log(1 + np.max(img))
     img = c * np.log(1 + img)
     return np.clip(img, 0, 255)
 
+#Contraste Exponencial 
 def contraste_exponencial(img, gamma=1.5):
     img = 255 * (img / 255) ** gamma
     return np.clip(img, 0, 255)
 
+#Recorte
 def recorte(img_pil, x1, y1, x2, y2):
     return img_pil.crop((x1, y1, x2, y2))
 
+#Zoom
 def zoom(img_pil, factor):
     w, h = img_pil.size
     return img_pil.resize((int(w * factor), int(h * factor)))
 
+#Rotación 
 def rotacion(img_pil, angulo):
     return img_pil.rotate(angulo, expand=True)
 
+#Histograma 
 def histograma(img_pil):
     plt.figure("Histograma")
     plt.hist(np.array(img_pil).ravel(), bins=256, color='gray')
     plt.title("Histograma de intensidades")
     plt.show()
 
+#Fusión de imágenes 
 def fusionar(img1_pil, img2_pil, alpha):
     img2_pil = img2_pil.resize(img1_pil.size)
     return Image.blend(img1_pil, img2_pil, alpha)
 
+#Fusión ecualizada
 def fusionar_ecualizadas(img1_pil, img2_pil, alpha):
     img1_eq = ImageOps.equalize(img1_pil.convert("L"))
     img2_eq = ImageOps.equalize(img2_pil.convert("L"))
     return Image.blend(img1_eq, img2_eq, alpha)
 
+#Capas RGB
 def extraer_rgb(img_pil):
     return img_pil.split()
 
+#Capas y CMYK
 def extraer_cmyk(img_pil):
     return img_pil.convert("CMYK").split()
 
+#Negativo
 def foto_negativa(img):
     return 255 - img
 
+#Escala de grises 
 def escala_grises(img_pil):
     return img_pil.convert("L")
 
+#Binarización 
 def binarizacion(img_pil, umbral):
     img_gray = np.array(img_pil.convert("L"))
     img_bin = (img_gray > umbral) * 255
@@ -84,8 +100,8 @@ def abrir_imagen():
     )
     if not ruta:
         return
-    imagen_original = Image.open(ruta).convert("RGB").resize((500, 350))
-    imagen_resultado = imagen_original.copy()
+    imagen_original = Image.open(ruta).convert("RGB").resize((500, 350)) #Carga la imagen y la ajusta 500x300 pixeles 
+    imagen_resultado = imagen_original.copy() #Guarda una copia en imagen_original e imagen_resultado
     mostrar_imagen(imagen_original)
 
 def abrir_imagen_secundaria():
@@ -103,21 +119,21 @@ def abrir_imagen_secundaria():
 def mostrar_imagen(img):
     global imagen_resultado
     imagen_resultado = img
-    foto = ImageTk.PhotoImage(img)
+    foto = ImageTk.PhotoImage(img)  #Convierte la imagen en formato que Tkinter puede mostrar
     lbl_imagen.config(image=foto)
     lbl_imagen.image = foto  
 
 # Funcionalidad de los botones 
 
-def aplicar_brillo_global():
+def aplicar_brillo_global():  #Aumenta o disminuye el brillo general de la imagen
     global imagen_original
     if imagen_original is None: return
     val = float(entry_brillo.get())
     img_np = np.array(imagen_original, dtype=np.float32)
     img_np = brillo(img_np, val)
-    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8)))
+    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8))) # Convierte la imagen a un arreglo numpy, suma un valor (multiplicado por 255)
 
-def aplicar_brillo_canal():
+def aplicar_brillo_canal(): # Modifica el brillo de cada canal de color (Rojo, Verde y Azul)
     global imagen_original
     if imagen_original is None: return
     r = simpledialog.askfloat("Brillo R", "Valor R (-1 a 1):", minvalue=-1, maxvalue=1)
@@ -125,44 +141,44 @@ def aplicar_brillo_canal():
     b = simpledialog.askfloat("Brillo B", "Valor B (-1 a 1):", minvalue=-1, maxvalue=1)
     img_np = np.array(imagen_original, dtype=np.float32)
     img_np = brillo_por_canal(img_np, r, g, b)
-    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8)))
+    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8))) # Pide tres valores (uno por canal) mediante cuadros de dialogo, luego aplica la función brillo_por_canal para modificar cada matriz RGB
 
-def aplicar_contraste_log():
+def aplicar_contraste_log(): #Resalta las zonas oscuras de la imagen
     if imagen_original is None: return
     img_np = np.array(imagen_original, dtype=np.float32)
     img_np = contraste_logaritmico(img_np)
-    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8)))
+    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8))) #Usa una transformación logaritmica sobre los valores de los pixeles (np.log(1 + valor)) para expandir los tonos oscuros
 
-def aplicar_contraste_exp():
+def aplicar_contraste_exp(): #Aplica un contraste exponencial (gamma correction)
     if imagen_original is None: return
     gamma = simpledialog.askfloat("Gamma", "Valor gamma (0.1-5.0):", minvalue=0.1, maxvalue=5.0)
     img_np = np.array(imagen_original, dtype=np.float32)
     img_np = contraste_exponencial(img_np, gamma)
-    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8)))
+    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8)))  # Si gamma < 1 -> aclara la imagen / Si gamma > 1 -> oscurece la imagen
 
-def aplicar_recorte():
+def aplicar_recorte():  #Permite recortar una parte especifica de la imagen 
     if imagen_original is None: return
     x1 = simpledialog.askinteger("Recorte", "x1:")
     y1 = simpledialog.askinteger("Recorte", "y1:")
     x2 = simpledialog.askinteger("Recorte", "x2:")
     y2 = simpledialog.askinteger("Recorte", "y2:")
-    mostrar_imagen(recorte(imagen_original, x1, y1, x2, y2))
+    mostrar_imagen(recorte(imagen_original, x1, y1, x2, y2)) #Solicita coordenadas (x1, y1) y (x2, y2) del area deseada
 
-def aplicar_zoom():
+def aplicar_zoom(): #Amplia o reduce el tamaño de la imagen
     if imagen_original is None: return
     factor = simpledialog.askfloat("Zoom", "Factor (1.5 = 150%):", minvalue=0.1)
-    mostrar_imagen(zoom(imagen_original, factor))
+    mostrar_imagen(zoom(imagen_original, factor)) #Usa un factor de escala y redimensiona la imagen con un resize
 
-def aplicar_rotacion():
+def aplicar_rotacion():  #Gira la imagenun número de grados indicado por el usuario
     if imagen_original is None: return
     angulo = simpledialog.askfloat("Rotación", "Ángulo en grados:")
-    mostrar_imagen(rotacion(imagen_original, angulo))
+    mostrar_imagen(rotacion(imagen_original, angulo)) #Usa image.rotate (angulo) para rotar la imagen sin alterar sus dimensiones originales
 
-def mostrar_histograma():
+def mostrar_histograma(): #Muestra el histograma de la imagen
     if imagen_original is None: return
-    histograma(imagen_original)
+    histograma(imagen_original) #Llama a la función histograma(), que calcula de intensidades de pixeles de 0 a 255
 
-def aplicar_fusion():
+def aplicar_fusion(): #Fusiona dos imagenes diferentes mediante un factor de mezcla alpha
     global imagen_original, imagen_secundaria
     if imagen_original is None or imagen_secundaria is None:
         messagebox.showwarning("Fusión", "Debes cargar dos imágenes (principal y secundaria).")
@@ -170,38 +186,38 @@ def aplicar_fusion():
     alpha = simpledialog.askfloat("Fusión", "Alpha (0-1):", minvalue=0, maxvalue=1)
     mostrar_imagen(fusionar(imagen_original, imagen_secundaria, alpha))
 
-def aplicar_fusion_ecualizada():
+def aplicar_fusion_ecualizada(): #Lo mismo que la función anterior, pero ecualiza ambas imagenes antes de mezclarlas 
     global imagen_original, imagen_secundaria
     if imagen_original is None or imagen_secundaria is None:
         messagebox.showwarning("Fusión Ecualizada", "Debes cargar dos imágenes primero.")
         return
     alpha = simpledialog.askfloat("Fusión Ecualizada", "Alpha (0-1):", minvalue=0, maxvalue=1)
-    mostrar_imagen(fusionar_ecualizadas(imagen_original, imagen_secundaria, alpha))
+    mostrar_imagen(fusionar_ecualizadas(imagen_original, imagen_secundaria, alpha)) #Aplica ecualización del histograma para que ambas tengan rangos tonales similares y la fusión sea más uniforme
 
-def aplicar_negativo():
+def aplicar_negativo():  #Invierte los colores de la imagen
     if imagen_original is None: return
     img_np = np.array(imagen_original, dtype=np.float32)
     img_np = foto_negativa(img_np)
-    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8)))
+    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8))) # Cada pixel p se convierte en 255 - p
 
-def aplicar_grises():
+def aplicar_grises(): # Convierte la imagen a escala de grises 
     if imagen_original is None: return
-    mostrar_imagen(escala_grises(imagen_original))
+    mostrar_imagen(escala_grises(imagen_original)) # Calcula una media ponderada de los canales RGB (ejemplo: 0.3R + 0.59G + 0.11B).
 
-def aplicar_binarizacion():
+def aplicar_binarizacion(): #Convierte la imagen a blanco y negro puro, según un umbral definido por el usuario
     if imagen_original is None: return
     umbral = simpledialog.askinteger("Binarización", "Umbral (0-255):", minvalue=0, maxvalue=255)
-    mostrar_imagen(binarizacion(imagen_original, umbral))
+    mostrar_imagen(binarizacion(imagen_original, umbral)) # Si el valor del píxel > umbral → blanco (255) / Si no → negro (0).
 
-def aplicar_rgb():
+def aplicar_rgb(): #Separa los tres canales de color (rgb)
     if imagen_original is None: return
     r, g, b = extraer_rgb(imagen_original)
-    r.show(title="Canal R"); g.show(title="Canal G"); b.show(title="Canal B")
+    r.show(title="Canal R"); g.show(title="Canal G"); b.show(title="Canal B") #Llama a extraer_rgb() que devuelve tres imágenes, cada una con un solo canal visible.
 
-def aplicar_cmyk():
+def aplicar_cmyk(): #Convierte la imagen de RGB a CMYK (modelo usado en impresión)
     if imagen_original is None: return
     c, m, y, k = extraer_cmyk(imagen_original)
-    c.show(title="Cian"); m.show(title="Magenta"); y.show(title="Amarillo"); k.show(title="Negro")
+    c.show(title="Cian"); m.show(title="Magenta"); y.show(title="Amarillo"); k.show(title="Negro") # Calcula los canales Cian, Magenta, Amarillo y Negro, y los muestra por separado.
 
 def guardar_imagen():
     """Guarda la imagen procesada actual en el formato elegido."""
