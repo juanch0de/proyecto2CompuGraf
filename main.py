@@ -209,10 +209,17 @@ def aplicar_binarizacion(): #Convierte la imagen a blanco y negro puro, según u
     umbral = simpledialog.askinteger("Binarización", "Umbral (0-255):", minvalue=0, maxvalue=255)
     mostrar_imagen(binarizacion(imagen_original, umbral)) # Si el valor del píxel > umbral → blanco (255) / Si no → negro (0).
 
-def aplicar_rgb(): #Separa los tres canales de color (rgb)
-    if imagen_original is None: return
+def aplicar_rgb():
+    if imagen_original is None:
+        return
     r, g, b = extraer_rgb(imagen_original)
-    r.show(title="Canal R"); g.show(title="Canal G"); b.show(title="Canal B") #Llama a extraer_rgb() que devuelve tres imágenes, cada una con un solo canal visible.
+    rojo = Image.merge("RGB", (r, Image.new("L", r.size), Image.new("L", r.size)))
+    verde = Image.merge("RGB", (Image.new("L", g.size), g, Image.new("L", g.size)))
+    azul = Image.merge("RGB", (Image.new("L", b.size), Image.new("L", b.size), b))
+    rojo.show(title="Canal Rojo (R)")
+    verde.show(title="Canal Verde (G)")
+    azul.show(title="Canal Azul (B)")
+
 
 def aplicar_cmyk(): #Convierte la imagen de RGB a CMYK (modelo usado en impresión)
     if imagen_original is None: return
