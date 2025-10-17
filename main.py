@@ -100,12 +100,11 @@ def abrir_imagen():
     )
     if not ruta:
         return
-    imagen_original = Image.open(ruta).convert("RGB").resize((500, 350)) #Carga la imagen y la ajusta 500x300 pixeles 
-    imagen_resultado = imagen_original.copy() #Guarda una copia en imagen_original e imagen_resultado
-    mostrar_imagen(imagen_original)
+    imagen_original = Image.open(ruta).convert("RGB").resize((500, 350))
+    imagen_resultado = imagen_original.copy()
+    mostrar_imagen(imagen_original, label=1)  
 
 def abrir_imagen_secundaria():
-    """Permite cargar una segunda imagen para fusión sin abrir cada vez."""
     global imagen_secundaria
     ruta = filedialog.askopenfilename(
         title="Selecciona segunda imagen para fusión",
@@ -114,14 +113,21 @@ def abrir_imagen_secundaria():
     if not ruta:
         return
     imagen_secundaria = Image.open(ruta).convert("RGB").resize((500, 350))
-    messagebox.showinfo("Imagen cargada", "Segunda imagen lista para fusión.")
+    mostrar_imagen(imagen_secundaria, label=2)  
 
-def mostrar_imagen(img):
+
+def mostrar_imagen(img, label=1):
     global imagen_resultado
     imagen_resultado = img
-    foto = ImageTk.PhotoImage(img)  #Convierte la imagen en formato que Tkinter puede mostrar
-    lbl_imagen.config(image=foto)
-    lbl_imagen.image = foto  
+    foto = ImageTk.PhotoImage(img)
+
+    if label == 1:
+        lbl_imagen1.config(image=foto)
+        lbl_imagen1.image = foto
+    elif label == 2:
+        lbl_imagen2.config(image=foto)
+        lbl_imagen2.image = foto
+
 
 # Funcionalidad de los botones 
 
@@ -303,9 +309,17 @@ for i, (texto, comando) in enumerate(botones):
 
 #Frame de imagen
 frame_imagen = tk.Frame(root, bg="#f0f0f0")
-frame_imagen.pack(fill="both", expand=True)
+frame_imagen.pack(fill="both", expand=True, pady=10)
 
-lbl_imagen = tk.Label(frame_imagen, bg="white", relief="sunken", width=600, height=400)
-lbl_imagen.pack(pady=20)
+# Dos columnas para mostrar ambas imágenes
+frame_imagen.columnconfigure(0, weight=1)
+frame_imagen.columnconfigure(1, weight=1)
+
+lbl_imagen1 = tk.Label(frame_imagen, bg="white", relief="sunken", width=500, height=350)
+lbl_imagen1.grid(row=0, column=0, padx=10, pady=10)
+
+lbl_imagen2 = tk.Label(frame_imagen, bg="white", relief="sunken", width=500, height=350)
+lbl_imagen2.grid(row=0, column=1, padx=10, pady=10)
+
 
 root.mainloop()
