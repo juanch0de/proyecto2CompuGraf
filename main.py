@@ -93,7 +93,7 @@ def abrir_imagen_secundaria():
     global imagen_secundaria
     ruta = filedialog.askopenfilename(
         title="Selecciona segunda imagen para fusión",
-        filetypes=[("Imágenes", ".png;.jpg;.jpeg;.bmp;.gif;.tiff")]
+        filetypes=[("Imágenes", ".png .jpg .jpeg .bmp .gif .tiff")]
     )
     if not ruta:
         return
