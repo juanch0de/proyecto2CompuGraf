@@ -80,7 +80,7 @@ def abrir_imagen():
     global imagen_original, imagen_resultado
     ruta = filedialog.askopenfilename(
         title="Selecciona una imagen",
-        filetypes=[("Imágenes", ".png;.jpg;.jpeg;.bmp;.gif;.tiff")]
+        filetypes=[("Imágenes", ".png .jpg .jpeg .bmp .gif .tiff")]
     )
     if not ruta:
         return
