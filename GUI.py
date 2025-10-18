@@ -7,6 +7,8 @@ import libGraf
 
 # Interfaz
 
+# La imagen al abrir se maneja con las clase Image de la librería Pillow
+
 def abrir_imagen():
     global imagen_original, imagen_resultado
     ruta = filedialog.askopenfilename(
@@ -56,7 +58,8 @@ def aplicar_brillo_canal(): # Modifica el brillo de cada canal de color (Rojo, V
     g = simpledialog.askfloat("Brillo G", "Valor G (-1 a 1):", minvalue=-1, maxvalue=1)
     b = simpledialog.askfloat("Brillo B", "Valor B (-1 a 1):", minvalue=-1, maxvalue=1)
     img_np = np.array(imagen_original, dtype=np.float32)
-    img_np = brillo_por_canal(img_np, r, g, b)
+    img_np = libGraf.ajustarBrilloPorCanal(img_np, r, g, b)
+    img_np = np.clip(img_np * 255, 0, 255)
     mostrar_imagen(Image.fromarray(img_np.astype(np.uint8))) # Pide tres valores (uno por canal) mediante cuadros de dialogo, luego aplica la función brillo_por_canal para modificar cada matriz RGB
 
 def aplicar_contraste_log(): #Resalta las zonas oscuras de la imagen
@@ -102,7 +105,7 @@ def aplicar_fusion(): #Fusiona dos imagenes diferentes mediante un factor de mez
     alpha = simpledialog.askfloat("Fusión", "Alpha (0-1):", minvalue=0, maxvalue=1)
     img1_np = np.array(imagen_original, dtype = np.float32)
     img2_np = np.array(imagen_secundaria, dtype = np.float32)
-    img_fusion = libGraf.fusion(img1_np, img2_np, alpha)
+    img_fusion = libGraf.fusionar(img1_np, img2_np, alpha)
     img_fusion = np.clip(img_fusion * 255, 0, 255)
     mostrar_imagen(Image.fromarray(img_fusion.astype(np.uint8)))
 
@@ -131,8 +134,20 @@ def aplicar_binarizacion(): #Convierte la imagen a blanco y negro puro, según u
 
 def aplicar_rgb(): #Separa los tres canales de color (rgb)
     if imagen_original is None: return
-    r, g, b = extraer_rgb(imagen_original)
-    r.show(title="Canal R"); g.show(title="Canal G"); b.show(title="Canal B") #Llama a extraer_rgb() que devuelve tres imágenes, cada una con un solo canal visible.
+    redChannel = np.array(imagen_original, dtype = np.float32)
+    greenChannel = np.array(imagen_original, dtype = np.float32)
+    blueChannel = np.array(imagen_original, dtype = np.float32)
+    redChannel, greenChannel, blueChannel = libGraf.extraerCapasRGB(imagen_original)
+    redChannel = np.clip(redChannel * 255, 0, 255)
+    greenChannel = np.clip(greenChannel * 255, 0, 255)
+    blueChannel = np.clip(blueChannel * 255, 0, 255)
+    redChannel = Image.fromarray(redChannel.astype(np.uint8))
+    greenChannel = Image.fromarray(greenChannel.astype(np.uint8))
+    blueChannel = Image.fromarray(blueChannel.astype(np.uint8))
+
+    redChannel.show(title="Canal R")
+    greenChannel.show(title="Canal G")
+    blueChannel.show(title="Canal B")
 
 def aplicar_cmyk(): #Convierte la imagen de RGB a CMYK (modelo usado en impresión)
     if imagen_original is None: return
