@@ -67,7 +67,7 @@ def aplicar_contraste_log(): #Resalta las zonas oscuras de la imagen
     
     # 0 oscurece la imagen completamente.
     # Para valores mayores a 600, ya no es perceptible el cambio en la imagen
-    factorContraste = simpledialog.askfloat("Factor", "Factor de contraste logarítimico:")
+    factorContraste = simpledialog.askfloat("Factor", "Factor de contraste logarítimico: (0-600)")
 
     img_np = np.array(imagen_original, dtype=np.float32)
     img_np = libGraf.contrastarLogaritmico(img_np, factorContraste)
@@ -80,7 +80,7 @@ def aplicar_contraste_exp(): #Aplica un contraste exponencial (gamma correction)
     
     # Valor de 0 oscurece la imagen completamente.
     # Valores mayores a 3 ya no hacen perceptible el cambio en la imagen
-    factorContraste  = simpledialog.askfloat("Factor", "Factor de contraste exponencial:")
+    factorContraste  = simpledialog.askfloat("Factor", "Factor de contraste exponencial: (0-3)")
 
     img_np = np.array(imagen_original, dtype=np.float32)
     img_np = libGraf.contrastarExponencial(img_np, factorContraste)
