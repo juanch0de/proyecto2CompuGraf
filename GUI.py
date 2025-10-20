@@ -267,11 +267,6 @@ btn_abrir2.pack(side="left", padx=10)
 btn_guardar = tk.Button(frame_superior, text="💾 Guardar Resultado", bg="#00b894", fg="white", font=("Segoe UI", 10, "bold"), command=guardar_imagen)
 btn_guardar.pack(side="left", padx=10)
 
-tk.Label(frame_superior, text="Brillo Global:", bg="#dfe6e9", font=("Segoe UI", 10)).pack(side="left", padx=5)
-entry_brillo = tk.Entry(frame_superior, width=6)
-entry_brillo.insert(0, "0.5")
-entry_brillo.pack(side="left")
-tk.Button(frame_superior, text="Aplicar", bg="#00cec9", fg="white", command=aplicar_brillo_global).pack(side="left", padx=5)
 
 #Frame de los botones 
 frame_botones = tk.LabelFrame(root, text="Operaciones de Imagen", bg="#f0f0f0", font=("Segoe UI", 10, "bold"), padx=10, pady=10)
