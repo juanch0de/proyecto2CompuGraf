@@ -64,40 +64,88 @@ def aplicar_brillo_canal(): # Modifica el brillo de cada canal de color (Rojo, V
 
 def aplicar_contraste_log(): #Resalta las zonas oscuras de la imagen
     if imagen_original is None: return
+    
+    # 0 oscurece la imagen completamente.
+    # Para valores mayores a 600, ya no es perceptible el cambio en la imagen
+    factorContraste = simpledialog.askfloat("Factor", "Factor de contraste logarítimico:")
+
     img_np = np.array(imagen_original, dtype=np.float32)
-    img_np = contraste_logaritmico(img_np)
-    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8))) #Usa una transformación logaritmica sobre los valores de los pixeles (np.log(1 + valor)) para expandir los tonos oscuros
+    img_np = libGraf.contrastarLogaritmico(img_np, factorContraste)
+    img_np = np.clip(img_np * 255, 0, 255)
+
+    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8))) 
 
 def aplicar_contraste_exp(): #Aplica un contraste exponencial (gamma correction)
     if imagen_original is None: return
-    gamma = simpledialog.askfloat("Gamma", "Valor gamma (0.1-5.0):", minvalue=0.1, maxvalue=5.0)
+    
+    # Valor de 0 oscurece la imagen completamente.
+    # Valores mayores a 3 ya no hacen perceptible el cambio en la imagen
+    factorContraste  = simpledialog.askfloat("Factor", "Factor de contraste exponencial:")
+
     img_np = np.array(imagen_original, dtype=np.float32)
-    img_np = contraste_exponencial(img_np, gamma)
-    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8)))  # Si gamma < 1 -> aclara la imagen / Si gamma > 1 -> oscurece la imagen
+    img_np = libGraf.contrastarExponencial(img_np, factorContraste)
+    img_np = np.clip(img_np * 255, 0, 255)
+
+    mostrar_imagen(Image.fromarray(img_np.astype(np.uint8))) 
 
 def aplicar_recorte():  #Permite recortar una parte especifica de la imagen 
     if imagen_original is None: return
+
+    imgRecorte = np.array(imagen_original, dtype = np.float32)
+    
     x1 = simpledialog.askinteger("Recorte", "x1:")
-    y1 = simpledialog.askinteger("Recorte", "y1:")
     x2 = simpledialog.askinteger("Recorte", "x2:")
+    y1 = simpledialog.askinteger("Recorte", "y1:")
     y2 = simpledialog.askinteger("Recorte", "y2:")
-    mostrar_imagen(recorte(imagen_original, x1, y1, x2, y2)) #Solicita coordenadas (x1, y1) y (x2, y2) del area deseada
+
+    imgRecorte = libGraf.recortarImagen(imgRecorte, x1, x2, y1, y2)
+    imgRecorte = np.clip(imgRecorte * 255, 0, 255)
+    
+    mostrar_imagen(Image.fromarray(imgRecorte.astype(np.uint8)))
 
 def aplicar_zoom(): #Amplia o reduce el tamaño de la imagen
     if imagen_original is None: return
-    factor = simpledialog.askfloat("Zoom", "Factor (1.5 = 150%):", minvalue=0.1)
-    mostrar_imagen(zoom(imagen_original, factor)) #Usa un factor de escala y redimensiona la imagen con un resize
 
-def aplicar_rotacion():  #Gira la imagenun número de grados indicado por el usuario
+    imgZoom = np.array(imagen_original, dtype = np.float32)
+
+    factor = simpledialog.askinteger("Zoom", "Factor (1.5 = 150%):", minvalue=0.1)
+    area = simpledialog.askinteger("Área", "Área:", minvalue = 0)
+    imgZoom = libGraf.hacerZoom(imgZoom, factor, area)
+   
+    imgZoom = np.clip(imgZoom * 255, 0 , 255) 
+
+    mostrar_imagen(Image.fromarray(imgZoom.astype(np.uint8)))
+
+def aplicar_rotacion():  
     if imagen_original is None: return
-    angulo = simpledialog.askfloat("Rotación", "Ángulo en grados:")
-    mostrar_imagen(rotacion(imagen_original, angulo)) #Usa image.rotate (angulo) para rotar la imagen sin alterar sus dimensiones originales
+
+    imagenRotada = np.array(imagen_original, dtype = np.float32)
+
+    angulo = simpledialog.askfloat("Rotación", "Ángulo en grados:", minvalue = 0, maxvalue = 180)
+
+    imagenRotada = libGraf.rotarImagen(imagenRotada, angulo)
+    imagenRotada = np.clip(imagenRotada * 255, 0, 255)
+
+    mostrar_imagen(Image.fromarray(imagenRotada.astype(np.uint8))) 
 
 def mostrar_histograma(): #Muestra el histograma de la imagen
     if imagen_original is None: return
     histograma(imagen_original) #Llama a la función histograma(), que calcula de intensidades de pixeles de 0 a 255
 
-def aplicar_fusion(): #Fusiona dos imagenes diferentes mediante un factor de mezcla alpha
+def aplicar_fusion(): #Fusiona dos imagenes diferentes
+    global imagen_original, imagen_secundaria
+
+    if imagen_original is None or imagen_secundaria is None:
+        messagebox.showwarning("Fusión", "Debes cargar dos imágenes (principal y secundaria).")
+        return
+
+    img1_np = np.array(imagen_original, dtype = np.float32)
+    img2_np = np.array(imagen_secundaria, dtype = np.float32)
+    img_fusion = libGraf.fusionarImagenes(img1_np, img2_np)
+    img_fusion = np.clip(img_fusion * 255, 0, 255)
+    mostrar_imagen(Image.fromarray(img_fusion.astype(np.uint8)))
+
+def aplicar_fusion_ecualizada(): #Lo mismo que la función anterior, pero ecualiza ambas imagenes antes de mezclarlas 
     global imagen_original, imagen_secundaria
     if imagen_original is None or imagen_secundaria is None:
         messagebox.showwarning("Fusión", "Debes cargar dos imágenes (principal y secundaria).")
@@ -105,39 +153,53 @@ def aplicar_fusion(): #Fusiona dos imagenes diferentes mediante un factor de mez
     alpha = simpledialog.askfloat("Fusión", "Alpha (0-1):", minvalue=0, maxvalue=1)
     img1_np = np.array(imagen_original, dtype = np.float32)
     img2_np = np.array(imagen_secundaria, dtype = np.float32)
-    img_fusion = libGraf.fusionar(img1_np, img2_np, alpha)
+    img_fusion = libGraf.fusionarEqualizadas(img1_np, img2_np, alpha)
     img_fusion = np.clip(img_fusion * 255, 0, 255)
     mostrar_imagen(Image.fromarray(img_fusion.astype(np.uint8)))
 
-def aplicar_fusion_ecualizada(): #Lo mismo que la función anterior, pero ecualiza ambas imagenes antes de mezclarlas 
-    global imagen_original, imagen_secundaria
-    if imagen_original is None or imagen_secundaria is None:
-        messagebox.showwarning("Fusión Ecualizada", "Debes cargar dos imágenes primero.")
-        return
-    alpha = simpledialog.askfloat("Fusión Ecualizada", "Alpha (0-1):", minvalue=0, maxvalue=1)
-    mostrar_imagen(fusionar_ecualizadas(imagen_original, imagen_secundaria, alpha)) #Aplica ecualización del histograma para que ambas tengan rangos tonales similares y la fusión sea más uniforme
+
 
 def aplicar_negativo():  #Invierte los colores de la imagen
     if imagen_original is None: return
+
     img_np = np.array(imagen_original, dtype=np.float32)
-    img_np = foto_negativa(img_np)
+    img_np = libGraf.invertirColor(img_np)
+    img_np = np.clip(img_np * 255, 0, 255)
     mostrar_imagen(Image.fromarray(img_np.astype(np.uint8))) # Cada pixel p se convierte en 255 - p
 
 def aplicar_grises(): # Convierte la imagen a escala de grises 
     if imagen_original is None: return
-    mostrar_imagen(escala_grises(imagen_original)) # Calcula una media ponderada de los canales RGB (ejemplo: 0.3R + 0.59G + 0.11B).
 
-def aplicar_binarizacion(): #Convierte la imagen a blanco y negro puro, según un umbral definido por el usuario
+    img_gris = np.array(imagen_original, dtype = np.float32)
+
+    img_gris = libGraf.pasarAGrises(img_gris)
+
+    img_gris = np.clip(img_gris * 255, 0, 255)
+    
+    mostrar_imagen(Image.fromarray(img_gris.astype(np.uint8)))
+
+def aplicar_binarizacion(): 
     if imagen_original is None: return
-    umbral = simpledialog.askinteger("Binarización", "Umbral (0-255):", minvalue=0, maxvalue=255)
-    mostrar_imagen(binarizacion(imagen_original, umbral)) # Si el valor del píxel > umbral → blanco (255) / Si no → negro (0).
+
+    img_binaria = np.array(imagen_original, dtype = np.float32)
+
+    # Valores < 0 es totalmente blanco
+    # Valor de 1 es totalmente negro
+    umbral = simpledialog.askfloat("Umbral", "Umbral:")
+
+    img_binaria = libGraf.binarizar(img_binaria, umbral)
+    img_binaria = np.clip(img_binaria * 255, 0, 255)
+    
+    mostrar_imagen(Image.fromarray(img_binaria.astype(np.uint8)))
 
 def aplicar_rgb(): #Separa los tres canales de color (rgb)
     if imagen_original is None: return
     redChannel = np.array(imagen_original, dtype = np.float32)
     greenChannel = np.array(imagen_original, dtype = np.float32)
     blueChannel = np.array(imagen_original, dtype = np.float32)
+
     redChannel, greenChannel, blueChannel = libGraf.extraerCapasRGB(imagen_original)
+
     redChannel = np.clip(redChannel * 255, 0, 255)
     greenChannel = np.clip(greenChannel * 255, 0, 255)
     blueChannel = np.clip(blueChannel * 255, 0, 255)
@@ -145,14 +207,30 @@ def aplicar_rgb(): #Separa los tres canales de color (rgb)
     greenChannel = Image.fromarray(greenChannel.astype(np.uint8))
     blueChannel = Image.fromarray(blueChannel.astype(np.uint8))
 
-    redChannel.show(title="Canal R")
-    greenChannel.show(title="Canal G")
-    blueChannel.show(title="Canal B")
+    redChannel.show(title="Canal Rojo")
+    greenChannel.show(title="Canal Verde")
+    blueChannel.show(title="Canal Azul")
 
 def aplicar_cmyk(): #Convierte la imagen de RGB a CMYK (modelo usado en impresión)
     if imagen_original is None: return
-    c, m, y, k = extraer_cmyk(imagen_original)
-    c.show(title="Cian"); m.show(title="Magenta"); y.show(title="Amarillo"); k.show(title="Negro") # Calcula los canales Cian, Magenta, Amarillo y Negro, y los muestra por separado.
+    cyanChannel = np.array(imagen_original, dtype = np.float32)
+    magentaChannel = np.array(imagen_original, dtype = np.float32)
+    yellowChannel = np.array(imagen_original, dtype = np.float32)
+    
+    cyanChannel, magentaChannel, yellowChannel = libGraf.extraerCapasCMYK(imagen_original)
+
+    cyanChannel = np.clip(cyanChannel * 255, 0, 255)
+    magentaChannel = np.clip(magentaChannel * 255, 0, 255)
+    yellowChannel = np.clip(yellowChannel * 255, 0, 255)
+
+    cyanChannel = Image.fromarray(cyanChannel.astype(np.uint8))
+    magentaChannel = Image.fromarray(magentaChannel.astype(np.uint8))
+    yellowChannel = Image.fromarray(yellowChannel.astype(np.uint8))
+
+    cyanChannel.show(title = "Canal Cyan")
+    magentaChannel.show(title = "Canal Magenta")
+    yellowChannel.show(title = "Canal Amarillo")
+
 
 def guardar_imagen():
     """Guarda la imagen procesada actual en el formato elegido."""
